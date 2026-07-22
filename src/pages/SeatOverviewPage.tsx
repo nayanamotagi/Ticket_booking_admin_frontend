@@ -22,6 +22,11 @@ type SeatOverviewResponse = {
     seats: { number: number; status: string }[];
 };
 
+type EventOption = {
+    id: string;
+    title: string;
+};
+
 const initialSeatStats: SeatStat[] = [
     { label: 'Available', value: 0, color: 'bg-emerald-500' },
     { label: 'Booked', value: 0, color: 'bg-sky-500' },
@@ -33,6 +38,10 @@ const initialSeats: Seat[] = [];
 function SeatOverviewPage() {
     const [seatStats, setSeatStats] = useState<SeatStat[]>(initialSeatStats);
     const [seats, setSeats] = useState<Seat[]>(initialSeats);
+    const [events, setEvents] = useState<EventOption[]>([]);
+    const [selectedEventId, setSelectedEventId] = useState('');
+    const [openModal, setOpenModal] = useState(false);
+    const [seatCount, setSeatCount] = useState(20);
     const [loading, setLoading] = useState(false);
     const [syncLoading, setSyncLoading] = useState(false);
     const [error, setError] = useState('');
@@ -74,13 +83,13 @@ function SeatOverviewPage() {
                 },
             });
 
-            const data: SeatOverviewResponse = await response.json();
+            const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data?.message || 'Failed to fetch seat status.');
+                throw new Error((data as any)?.message || 'Failed to fetch seat status.');
             }
 
-            updateSeats(data.seats);
+            updateSeats((data as SeatOverviewResponse).seats);
             setSuccess('Seat status updated successfully.');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to fetch seat status. Please try again.');
@@ -91,12 +100,41 @@ function SeatOverviewPage() {
 
     useEffect(() => {
         fetchSeatStatus();
+        fetchEvents();
     }, []);
+
+    async function fetchEvents() {
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch('http://localhost:5000/api/admin/events', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            const eventsData = await response.json();
+            if (!response.ok) {
+                throw new Error(eventsData?.message || 'Failed to load events.');
+            }
+            setEvents(eventsData.map((event: any) => ({ id: event._id, title: event.title })));
+            if (eventsData.length > 0) {
+                setSelectedEventId(eventsData[0]._id);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
     async function handleBulkCreateSeats() {
         setError('');
         setSuccess('');
         setLoading(true);
+
+        if (!selectedEventId) {
+            setError('Select an event before creating seats.');
+            setLoading(false);
+            return;
+        }
 
         try {
             const token = localStorage.getItem('adminToken');
@@ -107,8 +145,8 @@ function SeatOverviewPage() {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify({
-                    eventId: '6a60849803139e8c04e3a385',
-                    count: 20,
+                    eventId: selectedEventId,
+                    count: seatCount,
                 }),
             });
 
@@ -125,18 +163,9 @@ function SeatOverviewPage() {
                 status: seat.status === 'AVAILABLE' ? 'Available' : seat.status === 'BOOKED' ? 'Booked' : 'Blocked',
             }));
 
-            setSeats(updatedSeats);
-
-            const availableCount = updatedSeats.filter((seat: Seat) => seat.status === 'Available').length;
-            const bookedCount = updatedSeats.filter((seat: Seat) => seat.status === 'Booked').length;
-            const blockedCount = updatedSeats.filter((seat: Seat) => seat.status === 'Blocked').length;
-
-            setSeatStats([
-                { label: 'Available', value: availableCount, color: 'bg-emerald-500' },
-                { label: 'Booked', value: bookedCount, color: 'bg-sky-500' },
-                { label: 'Blocked', value: blockedCount, color: 'bg-slate-500' },
-            ]);
+            updateSeats(data.seats);
             setSuccess('Seats created successfully.');
+            setOpenModal(false);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to create seats. Please try again.');
         } finally {
@@ -159,13 +188,13 @@ function SeatOverviewPage() {
                 },
             });
 
-            const data: SeatOverviewResponse = await response.json();
+            const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data?.message || 'Failed to fetch seat status.');
+                throw new Error((data as any)?.message || 'Failed to fetch seat status.');
             }
 
-            updateSeats(data.seats);
+            updateSeats((data as SeatOverviewResponse).seats);
             setSuccess('Seat status updated successfully.');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to fetch seat status. Please try again.');
@@ -183,14 +212,80 @@ function SeatOverviewPage() {
                         <p className="mt-1 text-sm text-slate-500">Bulk create seats and monitor seat states across events.</p>
                     </div>
                     <button
-                        onClick={handleBulkCreateSeats}
+                        onClick={() => setOpenModal(true)}
                         disabled={loading}
                         className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                     >
-                        {loading ? 'Creating seats…' : 'Bulk create seats'}
+                        Bulk create seats
                     </button>
                 </div>
             </section>
+
+            {openModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6">
+                    <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+                        <div className="mb-6 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold text-slate-900">Bulk Create Seats</h2>
+                                <p className="mt-1 text-sm text-slate-500">Add seats for the selected event.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setOpenModal(false)}
+                                className="rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Select Event</label>
+                                <select
+                                    value={selectedEventId}
+                                    onChange={(event) => setSelectedEventId(event.target.value)}
+                                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-500"
+                                >
+                                    {events.map((event) => (
+                                        <option key={event.id} value={event.id}>
+                                            {event.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Seats to Create</label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={seatCount}
+                                    onChange={(event) => setSeatCount(Number(event.target.value))}
+                                    className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-sky-500"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setOpenModal(false)}
+                                    className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleBulkCreateSeats}
+                                    disabled={loading}
+                                    className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                                >
+                                    {loading ? 'Creating…' : 'Create'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <section className="grid gap-4 md:grid-cols-3">
                 {seatStats.map((stat) => (

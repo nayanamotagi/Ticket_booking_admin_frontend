@@ -67,6 +67,45 @@ function BookingDashboardPage() {
         ? bookings
         : bookings.filter((booking) => booking.status === activeFilter);
 
+    async function handleCancelBooking(bookingId: string) {
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch(`http://localhost:5000/api/admin/bookings/${bookingId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.message || 'Failed to cancel booking.');
+            }
+
+            const cancelledBooking = data.booking;
+            setBookings((current) =>
+                current.map((booking) =>
+                    booking.id === bookingId
+                        ? {
+                            ...booking,
+                            status: cancelledBooking?.status ?? 'CANCELLED',
+                        }
+                        : booking,
+                ),
+            );
+            setSuccess(data?.message || 'Booking cancelled successfully.');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to cancel booking. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <div className="space-y-6">
             <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
@@ -116,6 +155,7 @@ function BookingDashboardPage() {
                                 <th className="px-6 py-4 font-semibold uppercase tracking-[0.16em]">Seats</th>
                                 <th className="px-6 py-4 font-semibold uppercase tracking-[0.16em]">Amount</th>
                                 <th className="px-6 py-4 font-semibold uppercase tracking-[0.16em]">Status</th>
+                                <th className="px-6 py-4 font-semibold uppercase tracking-[0.16em]">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 bg-white">
@@ -138,11 +178,20 @@ function BookingDashboardPage() {
                                             {booking.status}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <button
+                                            onClick={() => handleCancelBooking(booking.id)}
+                                            disabled={loading || booking.status === 'CANCELLED'}
+                                            className="rounded-2xl bg-rose-100 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                                        >
+                                            {booking.status === 'CANCELLED' ? 'Cancelled' : 'Cancel'}
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                             {filteredBookings.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">
+                                    <td colSpan={7} className="px-6 py-10 text-center text-sm text-slate-500">
                                         No bookings found for this filter.
                                     </td>
                                 </tr>

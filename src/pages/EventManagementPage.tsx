@@ -1,10 +1,27 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
-const initialEvents = [
-    { id: '6a60849803139e8c04e3a385', name: 'City Concert', date: '2026-08-10', venue: 'Grand Hall', price: 2200, status: 'Active' },
-    { id: 'E-1002', name: 'Tech Meetup', date: '2026-09-05', venue: 'Expo Center', price: 1200, status: 'Draft' },
-    { id: 'E-1003', name: 'Film Premiere', date: '2026-10-12', venue: 'Cinema Plaza', price: 1800, status: 'Active' },
-];
+type EventItem = {
+    id: string;
+    name: string;
+    date: string;
+    venue: string;
+    price: number;
+    totalSeats?: number;
+    status: 'Active' | 'Draft';
+    seats?: { number: number; status: string }[];
+};
+
+type EventResponse = {
+    _id: string;
+    title: string;
+    date: string;
+    venue: string;
+    price: number;
+    totalSeats: number;
+    seats: { number: number; status: string }[];
+};
+
+const initialEvents: EventItem[] = [];
 
 function createSeats(totalSeats: number) {
     return Array.from({ length: totalSeats }, (_, index) => ({
@@ -14,7 +31,7 @@ function createSeats(totalSeats: number) {
 }
 
 function EventManagementPage() {
-    const [events, setEvents] = useState(initialEvents);
+    const [events, setEvents] = useState<EventItem[]>(initialEvents);
     const [loading, setLoading] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
     const [editingEvent, setEditingEvent] = useState<{
@@ -26,6 +43,47 @@ function EventManagementPage() {
     } | null>(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    const fetchEvents = async () => {
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch('http://localhost:5000/api/admin/events', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            const data: EventResponse[] = await response.json();
+
+            if (!response.ok) {
+                throw new Error((data as any)?.message || 'Failed to load events.');
+            }
+
+            setEvents(
+                data.map((event) => ({
+                    id: event._id,
+                    name: event.title,
+                    date: event.date,
+                    venue: event.venue,
+                    price: event.price,
+                    status: 'Active',
+                })),
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to load events. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
 
     async function handleCreateEvent() {
         setError('');
@@ -207,6 +265,8 @@ function EventManagementPage() {
                         {loading ? 'Creating event…' : 'New event'}
                     </button>
                 </div>
+                {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+                {success && <p className="mt-4 text-sm text-emerald-600">{success}</p>}
                 {editingEvent && (
                     <form onSubmit={handleEditSubmit} className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -275,11 +335,6 @@ function EventManagementPage() {
                         <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Events</p>
                         <h3 className="text-2xl font-semibold text-slate-900">Manage event details</h3>
                     </div>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                        <button className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800">
-                            Export list
-                        </button>
-                    </div>
                 </div>
 
                 <div className="overflow-hidden rounded-3xl border border-slate-200">
@@ -317,11 +372,24 @@ function EventManagementPage() {
                                             onClick={() => handleDeleteEvent(event.id)}
                                             className="rounded-2xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-200"
                                         >
-                                            Delete
-                                        </button>
+                                            Delete</button>
                                     </td>
                                 </tr>
                             ))}
+                            {loading && events.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                                        Loading events...
+                                    </td>
+                                </tr>
+                            )}
+                            {!loading && events.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                                        No events available.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
