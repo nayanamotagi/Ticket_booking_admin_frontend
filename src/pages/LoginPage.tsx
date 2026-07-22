@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../api';
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/login', {
+            const response = await fetch(apiUrl('/api/admin/login'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,6 +47,11 @@ function LoginPage() {
                     <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-600">Admin login</p>
                     <h1 className="mt-4 text-3xl font-semibold text-slate-900">Welcome back</h1>
                     <p className="mt-2 text-sm text-slate-500">Manage events, bookings, and transactions from one dashboard.</p>
+                    <div className="mt-4 rounded-3xl bg-slate-50 p-4 text-left text-sm text-slate-700">
+                        <p className="font-semibold text-slate-900">This is admin credentials</p>
+                        <p className="mt-2">email: <span className="font-medium">admin@example.com</span></p>
+                        <p>password: <span className="font-medium">admin123</span></p>
+                    </div>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <label className="block text-sm font-medium text-slate-700">

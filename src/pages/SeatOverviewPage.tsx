@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../api';
 
 type Seat = {
     id: string;
@@ -75,7 +76,7 @@ function SeatOverviewPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/events/6a60849803139e8c04e3a385/seats', {
+            const response = await fetch(apiUrl('/api/admin/events/6a60849803139e8c04e3a385/seats'), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -106,7 +107,7 @@ function SeatOverviewPage() {
     async function fetchEvents() {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/events', {
+            const response = await fetch(apiUrl('/api/admin/events'), {
                 headers: {
                     'Content-Type': 'application/json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -138,7 +139,7 @@ function SeatOverviewPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/events/seats/bulk-create', {
+            const response = await fetch(apiUrl('/api/admin/events/seats/bulk-create'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -180,7 +181,7 @@ function SeatOverviewPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/events/6a60849803139e8c04e3a385/seats', {
+            const response = await fetch(apiUrl('/api/admin/events/6a60849803139e8c04e3a385/seats'), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

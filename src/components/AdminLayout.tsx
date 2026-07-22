@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { apiUrl } from '../api';
 
 const navItems = [
     { label: 'Events', path: '/events' },
@@ -15,7 +16,7 @@ function AdminLayout() {
         const token = localStorage.getItem('adminToken');
 
         try {
-            await fetch('http://localhost:5000/api/auth/logout', {
+            await fetch(apiUrl('/api/auth/logout'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

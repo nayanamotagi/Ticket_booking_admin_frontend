@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../api';
 
 type Transaction = {
     _id: string;
@@ -29,7 +30,7 @@ function TransactionsDashboardPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/transactions', {
+            const response = await fetch(apiUrl('/api/admin/transactions'), {
                 headers: {
                     'Content-Type': 'application/json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -75,7 +76,7 @@ function TransactionsDashboardPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/wallet/refund', {
+            const response = await fetch(apiUrl('/api/admin/wallet/refund'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -26,3 +26,9 @@ React + Vite + Tailwind CSS admin dashboard for ticket booking management.
 ## Notes
 - This project includes frontend pages only.
 - Connect the admin UI to your backend API via React fetch or Axios in the page components.
+
+## Vercel deployment
+1. Add the environment variable in Vercel:
+   - `VITE_API_URL=https://ticket-booking-system-backend-q8gy.onrender.com`
+2. The frontend uses `import.meta.env.VITE_API_URL` and falls back to `http://localhost:5000` locally.
+3. Run `npm run build` in Vercel or locally to verify the production bundle.

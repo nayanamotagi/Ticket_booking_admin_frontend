@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { apiUrl } from '../api';
 
 type EventItem = {
     id: string;
@@ -51,7 +52,7 @@ function EventManagementPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/events', {
+            const response = await fetch(apiUrl('/api/admin/events'), {
                 headers: {
                     'Content-Type': 'application/json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -101,7 +102,7 @@ function EventManagementPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/events', {
+            const response = await fetch(apiUrl('/api/admin/events'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -181,7 +182,7 @@ function EventManagementPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch(`http://localhost:5000/api/admin/events/${editingEvent.id}`, {
+            const response = await fetch(apiUrl(`/api/admin/events/${editingEvent.id}`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -228,7 +229,7 @@ function EventManagementPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch(`http://localhost:5000/api/admin/events/${eventId}`, {
+            const response = await fetch(apiUrl(`/api/admin/events/${eventId}`), {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

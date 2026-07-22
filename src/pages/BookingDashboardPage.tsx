@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../api';
 
 const filters = ['All', 'BOOKED', 'PENDING', 'CANCELLED'];
 
@@ -26,7 +27,7 @@ function BookingDashboardPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('http://localhost:5000/api/admin/bookings', {
+            const response = await fetch(apiUrl('/api/admin/bookings'), {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ function BookingDashboardPage() {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch(`http://localhost:5000/api/admin/bookings/${bookingId}/cancel`, {
+            const response = await fetch(apiUrl(`/api/admin/bookings/${bookingId}/cancel`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
